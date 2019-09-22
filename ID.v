@@ -25,3 +25,13 @@ output reg [`RegAddrBus] reg2_addr_o,
 output wire reg1_read_o,
 output wire reg2_read_o,
 );
+/* Internal Signals Define */
+wire [`] imm;
+wire [`] inst_op;
+wire [`] inst_func;
+wire [`] inst_sa;
+wire [`] rs_addr;
+wire [`] rt_addr;
+wire [`] rd_addr;
+wire [`] sign_imm;
+wire [`] unsign_imm;
