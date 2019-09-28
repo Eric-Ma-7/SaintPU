@@ -122,7 +122,48 @@ always @(*) begin
                         reg1_read_o = `Enable;
                         reg2_read_o = `Enable;
                     end
-                    
+                    `EXE_ADD: begin
+                        wreg_o = `WriteEnable;
+                        aluop_o = `EXE_ADD_OP;
+                        alusel_o = `EXE_RES_ARITHMETIC;
+                        reg1_read_o = `Enable;
+                        reg2_read_o = `Enable;
+                    end
+                    `EXE_SUB: begin
+                        wreg_o = `WriteEnable;
+                        aluop_o = `EXE_SUB_OP;
+                        alusel_o = `EXE_RES_ARITHMETIC;
+                        reg1_read_o = `Enable;
+                        reg2_read_o = `Enable;
+                    end
+                    `EXE_ADDU: begin
+                        wreg_o = `WriteEnable;
+                        aluop_o = `EXE_ADDU_OP;
+                        alusel_o = `EXE_RES_ARITHMETIC;
+                        reg1_read_o = `Enable;
+                        reg2_read_o = `Enable;
+                    end
+                    `EXE_SUBU: begin
+                        wreg_o = `WriteEnable;
+                        aluop_o = `EXE_SUBU_OP;
+                        alusel_o = `EXE_RES_ARITHMETIC;
+                        reg1_read_o = `Enable;
+                        reg2_read_o = `Enable;
+                    end
+                    `EXE_SLT: begin
+                        wreg_o = `WriteEnable;
+                        aluop_o = `EXE_SLT_OP;
+                        alusel_o = `EXE_RES_ARITHMETIC;
+                        reg1_read_o = `Enable;
+                        reg2_read_o = `Enable;
+                    end
+                    `EXE_SLTU: begin
+                        wreg_o = `WriteEnable;
+                        aluop_o = `EXE_SLTU_OP;
+                        alusel_o = `EXE_RES_ARITHMETIC;
+                        reg1_read_o = `Enable;
+                        reg2_read_o = `Enable;
+                    end
                     default: begin
                     end
                 endcase
@@ -194,7 +235,42 @@ always @(*) begin
                 imm_o = {imm,16'h0};
                 wd_o = rt_addr;
             end
-            
+            `EXE_ADDI: begin
+                wreg_o = `WriteEnable;
+                aluop_o = `EXE_ADD_OP;
+                alusel_o = `EXE_RES_ARITHMETIC;
+                reg1_read_o = `Enable;
+                reg2_read_o = `Disable;
+                imm_o = sign_imm;
+                wd_o = rt_addr;
+            end
+            `EXE_ADDIU: begin
+                wreg_o = `WriteEnable;
+                aluop_o = `EXE_ADDU_OP;
+                alusel_o = `EXE_RES_ARITHMETIC;
+                reg1_read_o = `Enable;
+                reg2_read_o = `Disable;
+                imm_o = unsign_imm;
+                wd_o = rt_addr;
+            end
+            `EXE_SLTI: begin
+                wreg_o = `WriteEnable;
+                aluop_o = `EXE_SLT_OP;
+                alusel_o = `EXE_RES_ARITHMETIC;
+                reg1_read_o = `Enable;
+                reg2_read_o = `Disable;
+                imm_o = sign_imm;
+                wd_o = rt_addr;
+            end
+            `EXE_SLTIU: begin
+                wreg_o = `WriteEnable;
+                aluop_o = `EXE_SLTU_OP;
+                alusel_o = `EXE_RES_ARITHMETIC;
+                reg1_read_o = `Enable;
+                reg2_read_o = `Disable;
+                imm_o = unsign_imm;
+                wd_o = rt_addr;
+            end
             default: begin
             end
         endcase
