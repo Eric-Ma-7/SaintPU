@@ -1,3 +1,5 @@
+`include "Defines.v"
+
 module ex_mem (
 	//system signals
 	input	wire				rst, 
@@ -18,14 +20,14 @@ module ex_mem (
 	//
 );
     always @ (posedge clk ) begin
-    	if(rst == `RstEnable)
+    	if(rst == `RstEnable) begin
     		ex_aluop <= `EXE_NOP_OP;
     		ex_alusel <= `EXE_RES_NOP;
     		ex_reg1 <= `ZeroWord;
     		ex_reg2 <= `ZeroWord;
     		ex_wd <= `NOPRegAddr;
-    		ex_wreg <= `WriteDisable;	
-    	else begin
+    		ex_wreg <= `WriteDisable;
+	end  else begin
     		ex_aluop <= id_aluop;
     		ex_alusel <= id_alusel;
     		ex_reg1 <= id_reg1;
