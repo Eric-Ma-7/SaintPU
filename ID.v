@@ -7,7 +7,7 @@
 `define Enable 1'b1
 `define Disable 1'b0
 
-module ID(
+module id(
 input wire [`RegBus] pc_i,
 input wire [`RegBus] inst_i,
 input wire [`RegBus] reg1_data_i,
