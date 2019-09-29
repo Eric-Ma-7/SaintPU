@@ -1,3 +1,5 @@
+`include "Defines.v"
+
 module if_id (
 	//system signals
 	input	wire 				clk, 

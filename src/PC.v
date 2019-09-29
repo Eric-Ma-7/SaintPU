@@ -1,3 +1,5 @@
+`include "Defines.v"
+
 module  pc(
 	input	wire        		clk, 
 	input	wire        		rst,
@@ -15,10 +17,10 @@ module  pc(
 	end
 	always @(posedge clk) begin
 		if (ce == `ChipDisable) begin
-			pc <= 32`h00000000;
+			pc <= `ZeroWord;
 		end
 		else if (ce == `ChipEnable) begin
-			pc <= pc + 4`h4;
+			pc <= pc + 1'h1;
 		end
 	end
 

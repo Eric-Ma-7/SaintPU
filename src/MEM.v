@@ -1,3 +1,5 @@
+`include "Defines.v"
+
 module mem (
 	//system signals
 	input	wire				rst, 
@@ -8,8 +10,9 @@ module mem (
 	output  reg[`RegBus]		wdata_o,
 	output  reg[`RegAddrBus]	wd_o,
 	output  reg  				wreg_o
-	//
-	always @(*) begin
+
+);
+	always @ (*) begin
 		if (rst) begin
 			wdata_o <= `ZeroWord;
 			wd_o <= `NOPRegAddr;
@@ -21,6 +24,4 @@ module mem (
 			wreg_o <= wreg_i;
 		end
 	end
-);
-    
 endmodule
