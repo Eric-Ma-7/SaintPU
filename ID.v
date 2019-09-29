@@ -1,5 +1,6 @@
 /* This is the ID stage of St.PU */
 /*  */
+`include "defines.v"
 `define InstOpBus 5:0
 `define InstFuncBus 5:0
 `define InstShamtBus 4:0
@@ -82,7 +83,7 @@ always @(*) begin
                     `EXE_OR: begin
                         wreg_o <= `WriteEnable;
                         aluop_o <= `EXE_OR_OP;
-                        alusel_o <= ``EXE_RES_LOGIC;
+                        alusel_o <= `EXE_RES_LOGIC;
                         reg1_read_o <= `Enable;
                         reg2_read_o <= `Enable;
                     end
@@ -174,7 +175,7 @@ always @(*) begin
                     end
                 endcase
                 if (rs_addr == 5'h0) begin 
-                    case (inst_func):
+                    case (inst_func)
                         `EXE_SLL: begin
                             wreg_o <= `WriteEnable;
                             aluop_o <= `EXE_SLL_OP;
@@ -303,14 +304,14 @@ end
 always @(*) begin
     if (rst == `RstEnable) begin
         reg2_o <=  `ZeroWord;
-    end else if ((ex_wreg_i == `Enable) && (ex_wd_i == reg1_addr_o) && (reg2_read_o == `Enable)) begin
+    end else if ((ex_wreg_i == `Enable) && (ex_wd_i == reg2_addr_o) && (reg2_read_o == `Enable)) begin
         reg2_o <= ex_wdata_i;
     end else if ((reg2_read_o == `Enable) && (mem_wreg_i == `Enable) && (mem_wd_i == reg2_addr_o
     )) begin
         reg2_o <= mem_wdata_i;
-    end else if (reg1_read_o == `Enable) begin
-        reg2_o <= reg1_data_i;
-    end else if (reg1_read_o == `Disable) begin
+    end else if (reg2_read_o == `Enable) begin
+        reg2_o <= reg2_data_i;
+    end else if (reg2_read_o == `Disable) begin
         reg2_o <= imm_o;
     end else begin
         reg2_o <= `ZeroWord;
