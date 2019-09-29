@@ -8,18 +8,24 @@
 `define Disable 1'b0
 
 module ID(
-input reg [`RegBus] pc_i,
-input reg [`RegBus] inst_i,
+input wire [`RegBus] pc_i,
+input wire [`RegBus] inst_i,
 input wire [`RegBus] reg1_data_i,
 input wire [`RegBus] reg2_data_i,
 /* Reset Signal */
 input wire rst,
-/* Ex data input enable */
-input wire ex_wreg_i;
+/* EX data input enable */
+input wire ex_wreg_i,
 /* Ex data input destination addr */
-input wire [`RegAddrBus] ex_wd_i;
+input wire [`RegAddrBus] ex_wd_i,
 /* EX data input*/
-input wire [`RegBus] ex_wdata_i
+input wire [`RegBus] ex_wdata_i,
+/* MEM data input enable*/
+input wire mem_wreg_i,
+/* MEM data input destination addr*/
+input wire [`RegAddrBus] mem_wd_i,
+/* MEM data input */
+input wire [`RegBus] mem_wdata_i,
 /* Output Ports */
 /* ALU Operation Code */
 output reg [`AluOpBus] aluop_o,
@@ -30,13 +36,13 @@ output reg [`RegBus] reg2_o,
 /* Write Destination */
 output reg [`RegAddrBus] wd_o,
 /* Write Enable */
-output wire wreg_o,
+output reg wreg_o,
 /* Register Files Address */
 output reg [`RegAddrBus] reg1_addr_o,
 output reg [`RegAddrBus] reg2_addr_o,
 /* Register Read Enable */
-output wire reg1_read_o,
-output wire reg2_read_o,
+output reg reg1_read_o,
+output reg reg2_read_o
 );
 /* Internal Signals Define */
 wire [`ImmBus] imm = inst_i[15:0];
@@ -46,7 +52,7 @@ wire [`InstShamtBus] inst_sa = inst_i[10:6];
 wire [`RegAddrBus] rs_addr = inst_i[25:21];
 wire [`RegAddrBus] rt_addr = inst_i[20:16];
 wire [`RegAddrBus] rd_addr = inst_i[15:11];
-wire [`RegBus] sign_imm = {16{imm[15]},imm};
+wire [`RegBus] sign_imm = {{16{imm[15]}},imm};
 wire [`RegBus] unsign_imm = {16'h0,imm};
 reg [`RegBus] imm_o;
 
@@ -274,6 +280,7 @@ always @(*) begin
             default: begin
             end
         endcase
+    end
 end
 
 always @(*) begin
