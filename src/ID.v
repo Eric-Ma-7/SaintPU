@@ -42,7 +42,9 @@ output reg [`RegAddrBus] reg1_addr_o,
 output reg [`RegAddrBus] reg2_addr_o,
 /* Register Read Enable */
 output reg reg1_read_o,
-output reg reg2_read_o
+output reg reg2_read_o.
+/* Stall Request From ID stage. */
+output reg stallreq_from_id
 );
 /* Internal Signals Define */
 wire [`ImmBus] imm = inst_i[15:0];
@@ -55,6 +57,8 @@ wire [`RegAddrBus] rd_addr = inst_i[15:11];
 wire [`RegBus] sign_imm = {{16{imm[15]}},imm};
 wire [`RegBus] unsign_imm = {16'h0,imm};
 reg [`RegBus] imm_o;
+
+assign stallreq = `NoStop;
 
 always @(*) begin
     if (rst == `RstEnable) begin
@@ -82,7 +86,7 @@ always @(*) begin
                     `EXE_OR: begin
                         wreg_o <= `WriteEnable;
                         aluop_o <= `EXE_OR_OP;
-                        alusel_o <= ``EXE_RES_LOGIC;
+                        alusel_o <= `EXE_RES_LOGIC;
                         reg1_read_o <= `Enable;
                         reg2_read_o <= `Enable;
                     end
@@ -170,11 +174,63 @@ always @(*) begin
                         reg1_read_o <= `Enable;
                         reg2_read_o <= `Enable;
                     end
+                    `EXE_MULT: begin
+                        wreg_o <= `WriteDisable;
+                        aluop_o <= `EXE_MULT_OP;
+                        reg1_read_o <= `Enable;
+                        reg2_read_o <= `Enable;
+                    end
+                    `EXE_MULTU: begin
+                        wreg_o <= `WriteDisable;
+                        aluop_o <= `EXE_MULTU_OP;
+                        reg1_read_o <= `Enable;
+                        reg2_read_o <= `Enable;
+                    end
+                    `EXE_MFHI: begin
+                        wreg_o <= `WriteEnable;
+                        aluop_o <= `EXE_MFHI_OP;
+                        alusel_o <= `EXE_RES_MOVE;
+                        reg1_read_o <= `Disable;
+                        reg2_read_o <= `Disable;
+                    end
+                    `EXE_MFLO: begin
+                        wreg_o <= `WriteEnable;
+                        aluop_o <= `EXE_MFLO_OP;
+                        alusel_o <= `EXE_RES_MOVE;
+                        reg1_read_o <= `Disable;
+                        reg2_read_o <= `Disable;
+                    end
+                    `EXE_MTHI: begin
+                        wreg_o <= `WriteDisable;
+                        aluop_o <= `EXE_MTHI_OP;
+                        alusel_o <= `EXE_RES_MOVE;
+                        reg1_read_o <= `Enable;
+                        reg2_read_o <= `Disable;
+                    end
+                    `EXE_MTLO: begin
+                        wreg_o <= `WriteDisable;
+                        aluop_o <= `EXE_MTLO_OP;
+                        alusel_o <= `EXE_RES_MOVE;
+                        reg1_read_o <= `Enable;
+                        reg2_read_o <= `Disable;
+                    end
+                    `EXE_DIV: begin
+                        wreg_o <= `WriteDisable;
+                        aluop_o <= `EXE_DIV_OP;
+                        reg1_read_o <= `Enable;
+                        reg2_read_o <= `Enable;
+                    end
+                    `EXE_DIVU: begin
+                        wreg_o <= `WriteDisable;
+                        aluop_o <= `EXE_DIVU_OP;
+                        reg1_read_o <= `Enable;
+                        reg2_read_o <= `Enable;
+                    end
                     default: begin
                     end
                 endcase
                 if (rs_addr == 5'h0) begin 
-                    case (inst_func):
+                    case (inst_func)
                         `EXE_SLL: begin
                             wreg_o <= `WriteEnable;
                             aluop_o <= `EXE_SLL_OP;
@@ -303,14 +359,14 @@ end
 always @(*) begin
     if (rst == `RstEnable) begin
         reg2_o <=  `ZeroWord;
-    end else if ((ex_wreg_i == `Enable) && (ex_wd_i == reg1_addr_o) && (reg2_read_o == `Enable)) begin
+    end else if ((ex_wreg_i == `Enable) && (ex_wd_i == reg2_addr_o) && (reg2_read_o == `Enable)) begin
         reg2_o <= ex_wdata_i;
     end else if ((reg2_read_o == `Enable) && (mem_wreg_i == `Enable) && (mem_wd_i == reg2_addr_o
     )) begin
         reg2_o <= mem_wdata_i;
-    end else if (reg1_read_o == `Enable) begin
+    end else if (reg2_read_o == `Enable) begin
         reg2_o <= reg1_data_i;
-    end else if (reg1_read_o == `Disable) begin
+    end else if (reg2_read_o == `Disable) begin
         reg2_o <= imm_o;
     end else begin
         reg2_o <= `ZeroWord;
