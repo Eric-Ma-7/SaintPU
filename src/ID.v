@@ -339,7 +339,7 @@ always @(*) begin
     end
 end
 
-always @(*) begin
+always @(rst, ex_wd_i, ex_wreg_i, reg1_read_o, reg1_addr_o, mem_wd_i, mem_wreg_i) begin
     if (rst == `RstEnable) begin
         reg1_o <=  `ZeroWord;
     end else if ((ex_wreg_i == `Enable) && (ex_wd_i == reg1_addr_o) && (reg1_read_o == `Enable)) begin
@@ -356,7 +356,7 @@ always @(*) begin
     end
 end
 
-always @(*) begin
+always @(rst, ex_wd_i, ex_wreg_i, reg2_read_o, reg2_addr_o, mem_wd_i, mem_wreg_i) begin
     if (rst == `RstEnable) begin
         reg2_o <=  `ZeroWord;
     end else if ((ex_wreg_i == `Enable) && (ex_wd_i == reg2_addr_o) && (reg2_read_o == `Enable)) begin
