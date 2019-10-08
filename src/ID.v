@@ -60,7 +60,7 @@ reg [`RegBus] imm_o;
 
 assign stallreq = `NoStop;
 
-always @(*) begin
+always @(rst, inst_i, reg1_data_i, reg2_data_i, pc_i) begin
     if (rst == `RstEnable) begin
         aluop_o = `EXE_NOP_OP;
         alusel_o = `EXE_RES_NOP;
