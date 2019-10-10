@@ -12,6 +12,9 @@ module ex(
     input wire[`RegBus] hi_i,
     input wire[`RegBus] lo_i,
 
+    input wire[`DoubleRegBus] hilo_temp_i,
+    input wire[1:0] cnt_i,
+   
     input wire mem_whilo_i,
     input wire[`RegBus] mem_hi_i,
     input wire[`RegBus] mem_lo_i,
@@ -20,6 +23,10 @@ module ex(
     input wire[`RegBus] wb_hi_i,
     input wire[`RegBus] wb_lo_i,
     
+    output reg[`DoubleRegBus] hilo_temp_o,  
+    output reg[1:0] cnt_o,
+    output reg stallreq,
+     
     output reg whilo_o,
     output reg[`RegBus] hi_o,
     output reg[`RegBus] lo_o,
@@ -35,22 +42,24 @@ module ex(
     reg[`RegBus] HI;
     reg[`RegBus] LO;
     reg ov_flag;
-    reg[63:0] mul_res;
+    reg[`DoubleRegBus] mul_res;
     
     wire[`RegBus] reg1_i_u;
     wire[`RegBus] reg2_i_u;
     wire[`RegBus] reg1_i_not;
     wire[`RegBus] add_res_temp;
     wire[`RegBus] sub_res_temp;
-    wire[63:0] mul_res_u;
-    
+    wire[`DoubleRegBus] mul_res_u;
     wire mul_sign_flag;
+    
+    reg[`DoubleRegBus] hilo_temp_wt_hilo;
+    reg stallreq_madd_msub;
     
     //Add&Sub&Mul temp value
     assign add_res_temp = reg1_i + reg2_i;
     assign sub_res_temp = reg1_i - reg2_i;
     assign reg1_i_not = ~reg1_i;
-
+        
     
     // logic 
     always @(*) begin
@@ -106,8 +115,8 @@ module ex(
             HI <= wb_hi_i;
             LO <= wb_lo_i;
 	end else begin
-	    HI <= hi_i;
-	    LO <= lo_i;
+	        HI <= hi_i;
+	        LO <= lo_i;
         end
     end	
 
@@ -141,7 +150,7 @@ module ex(
 	    end
     end
     
-//MUL, MULT, MULTU
+//prepare for MUL, MULT, MULTU
     assign reg1_i_u = (reg1_i[31] == 1'b0) ? reg1_i : ~reg1_i + 1;
     assign reg2_i_u = (reg2_i[31] == 1'b0) ? reg2_i : ~reg2_i + 1;
     assign mul_res_u = reg1_i_u * reg2_i_u;
@@ -154,6 +163,99 @@ module ex(
             mul_res <= mul_res_u;
         end
     end
+
+//MADD MADDU MSUB MSUSB
+    always @(*) begin
+        if (rst == `RstEnable) begin
+            hilo_temp_o <= {`ZeroWord,`ZeroWord};
+	        cnt_o <= 2'b00;
+            stallreq_madd_msub <= `NoStop;
+	    end else begin 
+            case (aluop_i)
+                `EXE_MADD_OP:
+                    begin if(cnt_i == 2'b00) begin
+                        hilo_temp_o <= mul_res;
+                        stallreq <= stallreq_madd_msub;
+                        cnt_o <= 2'b01;
+                        hilo_temp_wt_hilo <= {`ZeroWord,`ZeroWord};
+                    end else if(cnt_i == 2'b01) begin
+                        hilo_temp_o <= {`ZeroWord,`ZeroWord};
+                        stallreq <= `NoStop;
+                        cnt_o <= 2'b10;
+                        hilo_temp_wt_hilo <= hilo_temp_i + {HI,LO};
+                    end else begin
+                        hilo_temp_o <= {`ZeroWord,`ZeroWord};
+                        stallreq <= `NoStop;
+                        cnt_o <= 2'b10;
+                        hilo_temp_wt_hilo <= {`ZeroWord,`ZeroWord};
+                    end
+                    end
+                `EXE_MADDU_OP:
+                    begin if(cnt_i == 2'b00) begin
+                        hilo_temp_o <= mul_res_u;
+                        stallreq <= stallreq_madd_msub;
+                        cnt_o <= 2'b01;
+                        hilo_temp_wt_hilo <= {`ZeroWord,`ZeroWord};
+                    end else if(cnt_i == 2'b01) begin
+                        hilo_temp_o <= {`ZeroWord,`ZeroWord};
+                        stallreq <= `NoStop;
+                        cnt_o <= 2'b10;
+                        hilo_temp_wt_hilo <= hilo_temp_i + {HI,LO};
+                    end else begin
+                        hilo_temp_o <= {`ZeroWord,`ZeroWord};
+                        stallreq <= `NoStop;
+                        cnt_o <= 2'b10;
+                        hilo_temp_wt_hilo <= {`ZeroWord,`ZeroWord};
+                    end
+                end
+                `EXE_MSUB_OP:
+                    begin if(cnt_i == 2'b00) begin
+                        hilo_temp_o <= mul_res;
+                        stallreq <= stallreq_madd_msub;
+                        cnt_o <= 2'b01;
+                        hilo_temp_wt_hilo <= {`ZeroWord,`ZeroWord};
+                    end else if(cnt_i == 2'b01) begin
+                        hilo_temp_o <= {`ZeroWord,`ZeroWord};
+                        stallreq <= `NoStop;
+                        cnt_o <= 2'b10;
+                        hilo_temp_wt_hilo <= hilo_temp_i - {HI,LO};
+                    end else begin
+                        hilo_temp_o <= {`ZeroWord,`ZeroWord};
+                        stallreq <= `NoStop;
+                        cnt_o <= 2'b10;
+                        hilo_temp_wt_hilo <= {`ZeroWord,`ZeroWord};
+                    end
+                end
+                `EXE_MSUBU_OP:
+                    begin if(cnt_i == 2'b00) begin
+                        hilo_temp_o <= mul_res_u;
+                        stallreq <= stallreq_madd_msub;
+                        cnt_o <= 2'b01;
+                        hilo_temp_wt_hilo <= {`ZeroWord,`ZeroWord};
+                    end else if(cnt_i == 2'b01) begin
+                        hilo_temp_o <= {`ZeroWord,`ZeroWord};
+                        stallreq <= `NoStop;
+                        cnt_o <= 2'b10;
+                        hilo_temp_wt_hilo <= hilo_temp_i - {HI,LO};
+                    end else begin
+                        hilo_temp_o <= {`ZeroWord,`ZeroWord};
+                        stallreq <= `NoStop;
+                        cnt_o <= 2'b10;
+                        hilo_temp_wt_hilo <= {`ZeroWord,`ZeroWord};
+                    end
+                end
+                default:
+                    begin
+                        hilo_temp_o <= {`ZeroWord,`ZeroWord};
+                        stallreq <= `NoStop;
+                        cnt_o <= 2'b10;
+                        hilo_temp_wt_hilo <= {`ZeroWord,`ZeroWord};
+                    end
+           endcase
+       end
+   end
+   
+
 
 //write HILO's value , MTHI MTLO
     always @(*) begin
@@ -186,6 +288,12 @@ module ex(
                         whilo_o <= `WriteEnable;
                         hi_o <= mul_res_u[63:32];
                         lo_o <= mul_res_u[31:0];
+                    end
+                `EXE_MADD_OP,`EXE_MADDU_OP,`EXE_MSUB_OP,`EXE_MSUBU_OP:
+                    begin
+                        whilo_o <= `WriteEnable;
+                        hi_o <= hilo_temp_wt_hilo[63:32];
+                        lo_o <= hilo_temp_wt_hilo[31:0];
                     end
 		        default:
 		            begin
