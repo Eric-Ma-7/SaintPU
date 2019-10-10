@@ -465,7 +465,11 @@ module ex(
             endcase
         end
     end
-
+    
+    //stall request
+    always @(*) begin
+        stallreq <= stallreq_madd_msub;
+    end
 
 
     // finally write back to regs
