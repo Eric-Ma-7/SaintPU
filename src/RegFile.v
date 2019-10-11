@@ -1,4 +1,4 @@
-`include "Defines.v"
+`include "Defines.vh"
 
 module regfile(
     input wire rst,

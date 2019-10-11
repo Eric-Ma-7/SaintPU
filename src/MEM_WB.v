@@ -1,12 +1,12 @@
-`include "Defines.v"
+`include "Defines.vh"
 
 module mem_wb (
 	//system signals
-    input   wire		rst, 
-    input   wire		clk,
-    input   wire[`RegBus]	mem_wdata,
-    input   wire[`RegAddrBus]	mem_wd,
-    input   wire		mem_wreg,
+	input	wire				rst, 
+	input	wire				clk,
+	input   wire[`RegBus]		mem_wdata,
+	input   wire[`RegAddrBus]	mem_wd,
+	input   wire				mem_wreg,
     input   wire[`RegBus]       mem_hi,
     input   wire[`RegBus]       mem_lo,
     input   wire                mem_whilo,
@@ -15,9 +15,9 @@ module mem_wb (
     output  reg[`RegBus]        wb_hi,
     output  reg[`RegBus]        wb_lo,
     output  reg                 wb_whilo,
-    output  reg[`RegBus]	wb_wdata,
-    output  reg[`RegAddrBus]	wb_wd,
-    output  reg			wb_wreg
+	output  reg[`RegBus]		wb_wdata,
+	output  reg[`RegAddrBus]	wb_wd,
+	output	reg 				wb_wreg
 	//
 );
     always @(posedge clk) begin

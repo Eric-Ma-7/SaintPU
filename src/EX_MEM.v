@@ -1,12 +1,12 @@
-`include "Defines.v"
+`include "Defines.vh"
 
 module ex_mem (
-    //system signals
-    input   wire		rst, 
-    input   wire		clk,
-    input   wire[`RegBus]	ex_wdata,
-    input   wire[`RegAddrBus]	ex_wd,
-    input   wire		ex_wreg,
+	//system signals
+	input	wire				rst, 
+	input	wire				clk,
+	input   wire[`RegBus]		ex_wdata,
+	input   wire[`RegAddrBus]	ex_wd,
+	input   wire				ex_wreg,
     input   wire                ex_whilo,
     input   wire[`RegBus]       ex_hi,
     input   wire[`RegBus]       ex_lo,    
@@ -19,9 +19,10 @@ module ex_mem (
     output  reg                 mem_whilo,
     output  reg[`RegBus]        mem_hi,
     output  reg[`RegBus]        mem_lo,
-    output  reg[`RegBus]	mem_wdata,
-    output  reg[`RegAddrBus]	mem_wd,
-    output  reg 		mem_wreg
+	output  reg[`RegBus]		mem_wdata,
+	output  reg[`RegAddrBus]	mem_wd,
+	output	reg 				mem_wreg
+	//
 );
     always @(posedge clk) begin
     	if (rst == `RstEnable) begin

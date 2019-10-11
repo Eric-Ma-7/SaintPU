@@ -1,4 +1,4 @@
-`include "Defines.v"
+`include "Defines.vh"
 
 module if_id (
 	//system signals
