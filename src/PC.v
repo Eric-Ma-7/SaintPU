@@ -1,11 +1,11 @@
-`include "Defines.v"
+`include "Defines.vh"
 
 module  pc(
 	input	wire        		clk, 
 	input	wire        		rst,
-	input	wire[5:0]		stall,
+	input	wire[5:0]			stall,
 	output  reg[`InstAddrBus]	pc,
-	output  reg			ce   
+	output  reg					ce   
 );
     
 	always @(posedge clk) begin
