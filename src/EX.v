@@ -1,6 +1,7 @@
 `include "Defines.vh"
 
 module ex(
+
     input wire rst,
     input wire[`AluSelBus] alusel_i,
     input wire[`AluOpBus] aluop_i,
@@ -11,7 +12,7 @@ module ex(
     input wire wreg_i,
     input wire[`RegBus] hi_i,
     input wire[`RegBus] lo_i,
-
+ 
     input wire[`DoubleRegBus] hilo_temp_i,
     input wire[1:0] cnt_i,
    
@@ -49,7 +50,10 @@ module ex(
     wire[`RegBus] reg1_i_not;
     wire[`RegBus] add_res_temp;
     wire[`RegBus] sub_res_temp;
+    wire[`RegBus] sub_res_temp_u;
     wire[`DoubleRegBus] mul_res_u;
+    wire          ov_flag_sub;
+    wire          ov_flag_add;
     wire mul_sign_flag;
     
     reg[`DoubleRegBus] hilo_temp_wt_hilo;
@@ -58,8 +62,15 @@ module ex(
     //Add&Sub&Mul temp value
     assign add_res_temp = reg1_i + reg2_i;
     assign sub_res_temp = reg1_i - reg2_i;
+    //assign sub_res_temp_u = reg1_i - reg2_i;
     assign reg1_i_not = ~reg1_i;
         
+        
+    assign ov_flag_add = ((reg1_i[31] && reg2_i[31] && (~add_res_temp[31]))||
+    ((~reg1_i[31]) && (~reg2_i[31]) && (add_res_temp[31]))) ? 1'b1 : 1'b0;
+    
+    assign ov_flag_sub = (((reg1_i[31] && (~reg2_i[31]) && (~sub_res_temp[31]))||
+    ((~reg1_i[31]) && (reg2_i[31]) && (sub_res_temp[31])))) ? 1'b1 : 1'b0; 
     
     // logic 
     always @(*) begin
@@ -165,6 +176,7 @@ module ex(
     end
 
 //MADD MADDU MSUB MSUSB
+/*
     always @(*) begin
         if (rst == `RstEnable) begin
             hilo_temp_o <= {`ZeroWord,`ZeroWord};
@@ -254,7 +266,7 @@ module ex(
            endcase
        end
    end
-   
+   */
 
 
 //write HILO's value , MTHI MTLO
@@ -289,12 +301,12 @@ module ex(
                         hi_o <= mul_res_u[63:32];
                         lo_o <= mul_res_u[31:0];
                     end
-                `EXE_MADD_OP,`EXE_MADDU_OP,`EXE_MSUB_OP,`EXE_MSUBU_OP:
+                /*`EXE_MADD_OP,`EXE_MADDU_OP,`EXE_MSUB_OP,`EXE_MSUBU_OP:
                     begin
                         whilo_o <= `WriteEnable;
                         hi_o <= hilo_temp_wt_hilo[63:32];
                         lo_o <= hilo_temp_wt_hilo[31:0];
-                    end
+                    end*/
 		        default:
 		            begin
 			            whilo_o <= `WriteDisable;
@@ -339,47 +351,38 @@ module ex(
             case (aluop_i)
                 `EXE_ADD_OP:
                     //add overflow detection        
-                    begin if((reg1_i[31] && reg2_i[31] && (~add_res_temp[31]))||((~reg1_i[31]) && (~reg2_i[31]) && (add_res_temp[31]))) begin
-                        ov_flag <= 1'b1;
-                        end else begin
-                        arithout <= reg2_i + reg1_i;
-                        ov_flag <= 1'b0;
-                        end
+                    begin 
+                        arithout <= add_res_temp;
+                        ov_flag <= ov_flag_add;
                     end
                 `EXE_ADDI_OP:
                     //add overflow detection 
-                    begin if((reg1_i[31] && reg2_i[31] && (~add_res_temp[31]))||((~reg1_i[31]) && (~reg2_i[31]) && (add_res_temp[31]))) begin
-                        ov_flag <= 1'b1;
-                        end else begin
-                        arithout <= reg2_i + reg1_i;
-                        ov_flag <= 1'b0;
-                        end
+                    begin 
+                        arithout <= add_res_temp;
+                        ov_flag <= ov_flag_add;
                     end
                 `EXE_ADDU_OP:
                     //no overflow detection
                     begin 
-                        arithout <= reg2_i + reg1_i;
+                        arithout <= add_res_temp;
                         ov_flag <= 1'b0;
                     end
                 `EXE_ADDIU_OP:
                     //no overflow detection
                     begin 
-                        arithout <= reg2_i + reg1_i;
+                        arithout <= add_res_temp;
                         ov_flag <= 1'b0;
                     end
                 `EXE_SUB_OP:
                     //sub overflow detection 
-                    begin if((reg1_i[31] && (~reg2_i[31]) && (~add_res_temp[31]))||((~reg1_i[31]) && (reg2_i[31]) && (add_res_temp[31]))) begin
-                        ov_flag <= 1'b1;
-                        end else begin
-                        arithout <= reg1_i - reg2_i;
-                        ov_flag <= 1'b0;
-                        end
+                    begin 
+                        arithout <= sub_res_temp;
+                        ov_flag <= ov_flag_sub;
                     end
                 `EXE_SUBU_OP:
                     //no sub overflow detection 
                     begin 
-                        arithout <= reg1_i - reg2_i;
+                        arithout <= sub_res_temp;
                         ov_flag <= 1'b0;
                     end
                 `EXE_SLT_OP:
@@ -388,10 +391,8 @@ module ex(
                             arithout <= 1'b0;
                         end else if((reg1_i[31] == 1'b1) && (reg2_i[31] == 1'b0)) begin
                             arithout <= 1'b1;
-                        end else if(sub_res_temp[31] == 1'b0) begin    //the same sign
-                            arithout <= 1'b0;
-                        end else if(sub_res_temp[31] == 1'b1) begin    //the same sign
-                            arithout <= 1'b1;
+                        end else begin
+                            arithout <= reg1_i[31] ^ ov_flag_sub;
                         end
                     end
                 `EXE_SLTI_OP:
@@ -400,29 +401,27 @@ module ex(
                             arithout <= 1'b0;
                         end else if((reg1_i[31] == 1'b1) && (reg2_i[31] == 1'b0)) begin
                             arithout <= 1'b1;
-                        end else if(sub_res_temp[31] == 1'b0) begin    //the same sign
-                            arithout <= 1'b0;
-                        end else if(sub_res_temp[31] == 1'b1) begin    //the same sign
-                            arithout <= 1'b1;
+                        end else begin
+                            arithout <= reg1_i[31] ^ ov_flag_sub;
                         end
                     end
                 `EXE_SLTU_OP:
                     //compare rs and rt's value
-                    begin if(sub_res_temp[31] == 1'b0) begin    //the same sign
-                            arithout <= 1'b0;
-                        end else if(sub_res_temp[31] == 1'b1) begin    //the same sign
+                     begin if(reg1_i < reg2_i) begin    //the same sign
                             arithout <= 1'b1;
+                        end else  begin    //the same sign
+                            arithout <= 1'b0;
                         end
                     end
                 `EXE_SLTIU_OP:
                     //compare rs and rt's value
-                    begin if(sub_res_temp[31] == 1'b0) begin    //the same sign
-                            arithout <= 1'b0;
-                        end else if(sub_res_temp[31] == 1'b1) begin    //the same sign
+                     begin if(reg1_i < reg2_i) begin    //the same sign
                             arithout <= 1'b1;
+                        end else  begin    //the same sign
+                            arithout <= 1'b0;
                         end
                     end
-                `EXE_CLZ_OP: begin 				//a counter 
+                /*`EXE_CLZ_OP: begin 				//a counter 
 			     	arithout <= (reg1_i[31] ? 0 : reg1_i[30] ? 1 :
 			     				reg1_i[29] ? 2 : reg1_i[28] ? 3 :
 			     				reg1_i[27] ? 4 : reg1_i[26] ? 5 :
@@ -457,7 +456,7 @@ module ex(
 			     				reg1_i_not[5] ? 26 : reg1_i_not[4] ? 27 :
 			     				reg1_i_not[3] ? 28 : reg1_i_not[2] ? 29 :
 			     				reg1_i_not[1] ? 39 : reg1_i_not[0] ? 31 : 32) ;
-			     end
+			     end*/
                 default: 
                     begin
                         arithout <= `ZeroWord;

@@ -169,6 +169,7 @@ always @(*) begin
                         reg1_read_o <= `Enable;
                         reg2_read_o <= `Enable;
                     end
+                    
                     `EXE_SLTU: begin
                         wreg_o <= `WriteEnable;
                         aluop_o <= `EXE_SLTU_OP;
@@ -265,7 +266,7 @@ always @(*) begin
             end
             `EXE_ORI: begin
                 wreg_o <= `WriteEnable;
-                aluop_o <= `EXE_OR_OP;
+                aluop_o <= `EXE_ORI_OP;
                 alusel_o <= `EXE_RES_LOGIC;
                 reg1_read_o <= `Enable;
                 reg2_read_o <= `Disable;
@@ -274,7 +275,7 @@ always @(*) begin
             end
             `EXE_ANDI: begin
                 wreg_o <= `WriteEnable;
-                aluop_o <= `EXE_AND_OP;
+                aluop_o <= `EXE_ANDI_OP;
                 alusel_o <= `EXE_RES_LOGIC;
                 reg1_read_o <= `Enable;
                 reg2_read_o <= `Disable;
@@ -283,7 +284,7 @@ always @(*) begin
             end
             `EXE_XORI: begin
                 wreg_o <= `WriteEnable;
-                aluop_o <= `EXE_XOR_OP;
+                aluop_o <= `EXE_XORI_OP;
                 alusel_o <= `EXE_RES_LOGIC;
                 reg1_read_o <= `Enable;
                 reg2_read_o <= `Disable;
@@ -301,7 +302,7 @@ always @(*) begin
             end
             `EXE_ADDI: begin
                 wreg_o <= `WriteEnable;
-                aluop_o <= `EXE_ADD_OP;
+                aluop_o <= `EXE_ADDI_OP;
                 alusel_o <= `EXE_RES_ARITHMETIC;
                 reg1_read_o <= `Enable;
                 reg2_read_o <= `Disable;
@@ -310,7 +311,7 @@ always @(*) begin
             end
             `EXE_ADDIU: begin
                 wreg_o <= `WriteEnable;
-                aluop_o <= `EXE_ADDU_OP;
+                aluop_o <= `EXE_ADDIU_OP;
                 alusel_o <= `EXE_RES_ARITHMETIC;
                 reg1_read_o <= `Enable;
                 reg2_read_o <= `Disable;
@@ -319,7 +320,7 @@ always @(*) begin
             end
             `EXE_SLTI: begin
                 wreg_o <= `WriteEnable;
-                aluop_o <= `EXE_SLT_OP;
+                aluop_o <= `EXE_SLTI_OP;
                 alusel_o <= `EXE_RES_ARITHMETIC;
                 reg1_read_o <= `Enable;
                 reg2_read_o <= `Disable;
@@ -328,11 +329,11 @@ always @(*) begin
             end
             `EXE_SLTIU: begin
                 wreg_o <= `WriteEnable;
-                aluop_o <= `EXE_SLTU_OP;
+                aluop_o <= `EXE_SLTIU_OP;
                 alusel_o <= `EXE_RES_ARITHMETIC;
                 reg1_read_o <= `Enable;
                 reg2_read_o <= `Disable;
-                imm_o <= unsign_imm;
+                imm_o <= sign_imm;
                 wd_o <= rt_addr;
             end
             default: begin
