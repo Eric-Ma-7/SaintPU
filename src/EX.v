@@ -24,6 +24,14 @@ module ex(
     input wire[`RegBus] wb_hi_i,
     input wire[`RegBus] wb_lo_i,
     
+    input wire[`DoubleRegBus] div_result_i,
+    input wire div_ready_i,
+    
+    output reg[`RegBus] div_opdata1_o,
+    output reg[`RegBus] div_opdata2_o,
+    output reg div_start_o,
+    output reg signed_div_o,
+  
     output reg[`DoubleRegBus] hilo_temp_o,  
     output reg[1:0] cnt_o,
     output reg stallreq,
@@ -58,6 +66,7 @@ module ex(
     
     reg[`DoubleRegBus] hilo_temp_wt_hilo;
     reg stallreq_madd_msub;
+    reg stallreq_div;
     
     //Add&Sub&Mul temp value
     assign add_res_temp = reg1_i + reg2_i;
@@ -267,9 +276,69 @@ module ex(
        end
    end
    */
+    always @ (*) begin
+		if(rst == `RstEnable) begin
+			stallreq_div <= `NoStop;
+	    div_opdata1_o <= `ZeroWord;
+			div_opdata2_o <= `ZeroWord;
+			div_start_o <= `DivStop;
+			signed_div_o <= 1'b0;
+		end else begin
+			stallreq_div <= `NoStop;
+	    div_opdata1_o <= `ZeroWord;
+			div_opdata2_o <= `ZeroWord;
+			div_start_o <= `DivStop;
+			signed_div_o <= 1'b0;	
+			case (aluop_i) 
+				`EXE_DIV_OP:		begin
+					if(div_ready_i == `DivResultNotReady) begin
+	    			div_opdata1_o <= reg1_i;
+						div_opdata2_o <= reg2_i;
+						div_start_o <= `DivStart;
+						signed_div_o <= 1'b1;
+						stallreq_div <= `Stop;
+					end else if(div_ready_i == `DivResultReady) begin
+	    			div_opdata1_o <= reg1_i;
+						div_opdata2_o <= reg2_i;
+						div_start_o <= `DivStop;
+						signed_div_o <= 1'b1;
+						stallreq_div <= `NoStop;
+					end else begin						
+	    			div_opdata1_o <= `ZeroWord;
+						div_opdata2_o <= `ZeroWord;
+						div_start_o <= `DivStop;
+						signed_div_o <= 1'b0;
+						stallreq_div <= `NoStop;
+					end					
+				end
+				`EXE_DIVU_OP:		begin
+					if(div_ready_i == `DivResultNotReady) begin
+	    			div_opdata1_o <= reg1_i;
+						div_opdata2_o <= reg2_i;
+						div_start_o <= `DivStart;
+						signed_div_o <= 1'b0;
+						stallreq_div <= `Stop;
+					end else if(div_ready_i == `DivResultReady) begin
+	    			div_opdata1_o <= reg1_i;
+						div_opdata2_o <= reg2_i;
+						div_start_o <= `DivStop;
+						signed_div_o <= 1'b0;
+						stallreq_div <= `NoStop;
+					end else begin						
+	    			div_opdata1_o <= `ZeroWord;
+						div_opdata2_o <= `ZeroWord;
+						div_start_o <= `DivStop;
+						signed_div_o <= 1'b0;
+						stallreq_div <= `NoStop;
+					end					
+				end
+				default: begin
+				end
+			endcase
+		end
+	end	
 
-
-//write HILO's value , MTHI MTLO
+//write HILO's value , MTHI MTLO DIV DIVU
     always @(*) begin
         if (rst == `RstEnable) begin
             whilo_o <= `WriteDisable;
@@ -307,6 +376,12 @@ module ex(
                         hi_o <= hilo_temp_wt_hilo[63:32];
                         lo_o <= hilo_temp_wt_hilo[31:0];
                     end*/
+                `EXE_DIV_OP,`EXE_DIVU_OP:
+                    begin
+                        whilo_o <= `WriteEnable;
+                        hi_o <= div_result_i[63:32];
+                        lo_o <= div_result_i[31:0];
+                    end
 		        default:
 		            begin
 			            whilo_o <= `WriteDisable;
@@ -466,8 +541,11 @@ module ex(
     end
     
     //stall request
-    always @(*) begin
+    /*always @(*) begin
         stallreq <= stallreq_madd_msub;
+    end*/
+    always @(*) begin
+        stallreq <= stallreq_div;
     end
 
 

@@ -83,6 +83,14 @@ module stpu(
     wire[1:0]           hilo_cnt_o;
     wire[`DoubleRegBus] hilo_temp;
     
+    //Div
+    wire                signed_div;
+    wire[`RegBus]       div_opdata1;
+    wire[`RegBus]       div_opdata2;
+    wire                div_start;
+    wire[`DoubleRegBus] div_result;
+    wire                div_ready;
+    
     //pc reg 
     pc pc_reg0(
         .clk(clk),  
@@ -201,6 +209,9 @@ module stpu(
         .hi_i(hi),
         .lo_i(lo),
         
+        .div_result_i(div_result),
+        .div_ready_i(div_ready),
+        
         //output
         //to EX/MEM
         .wdata_o(ex_wdata_o),   
@@ -213,10 +224,30 @@ module stpu(
         
         .hilo_temp_o(ex_hilo_temp_o),
         .cnt_o(ex_cnt_o),
-        .stallreq(stallreq_ex)
+        .stallreq(stallreq_ex),
         
+        //Div
+        .signed_div_o(signed_div),
+        .div_opdata1_o(div_opdata1),
+        .div_opdata2_o(div_opdata2),
+        .div_start_o(div_start)
     );
     
+    
+    
+    div div0(
+        .clk(clk),
+        .rst(rst),
+        
+        .signed_div_i(signed_div),
+        .opdata1_i(div_opdata1),
+        .opdata2_i(div_opdata2),
+        .start_i(div_start),
+        .annul_i(1'b0),
+        
+        .result_o(div_result),
+        .ready_o(div_ready)
+    );
 
     
     //EX/MEM
