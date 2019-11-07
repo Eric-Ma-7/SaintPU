@@ -1,5 +1,7 @@
 /* This is the ID stage of St.PU */
 /*  */
+`include "Defines.vh"
+
 `define InstOpBus 5:0
 `define InstFuncBus 5:0
 `define InstShamtBus 4:0
@@ -42,7 +44,7 @@ output reg [`RegAddrBus] reg1_addr_o,
 output reg [`RegAddrBus] reg2_addr_o,
 /* Register Read Enable */
 output reg reg1_read_o,
-output reg reg2_read_o.
+output reg reg2_read_o,
 /* Stall Request From ID stage. */
 output reg stallreq_from_id
 );
@@ -58,9 +60,9 @@ wire [`RegBus] sign_imm = {{16{imm[15]}},imm};
 wire [`RegBus] unsign_imm = {16'h0,imm};
 reg [`RegBus] imm_o;
 
-assign stallreq = `NoStop;
+//assign stallreq = `NoStop;
 
-always @(rst, inst_i, reg1_data_i, reg2_data_i, pc_i) begin
+always @(rst or rs_addr or rt_addr or inst_op or inst_func or inst_sa or unsign_imm or imm or sign_imm) begin
     if (rst == `RstEnable) begin
         aluop_o = `EXE_NOP_OP;
         alusel_o = `EXE_RES_NOP;
@@ -167,6 +169,7 @@ always @(rst, inst_i, reg1_data_i, reg2_data_i, pc_i) begin
                         reg1_read_o <= `Enable;
                         reg2_read_o <= `Enable;
                     end
+                    
                     `EXE_SLTU: begin
                         wreg_o <= `WriteEnable;
                         aluop_o <= `EXE_SLTU_OP;
@@ -263,16 +266,16 @@ always @(rst, inst_i, reg1_data_i, reg2_data_i, pc_i) begin
             end
             `EXE_ORI: begin
                 wreg_o <= `WriteEnable;
-                aluop_o <= `EXE_OR_OP;
+                aluop_o <= `EXE_ORI_OP;
                 alusel_o <= `EXE_RES_LOGIC;
                 reg1_read_o <= `Enable;
                 reg2_read_o <= `Disable;
-                imm_o <= unsign_imm;
+                imm_o <= unsign_imm;   
                 wd_o <=  rt_addr;
             end
             `EXE_ANDI: begin
                 wreg_o <= `WriteEnable;
-                aluop_o <= `EXE_AND_OP;
+                aluop_o <= `EXE_ANDI_OP;
                 alusel_o <= `EXE_RES_LOGIC;
                 reg1_read_o <= `Enable;
                 reg2_read_o <= `Disable;
@@ -281,7 +284,7 @@ always @(rst, inst_i, reg1_data_i, reg2_data_i, pc_i) begin
             end
             `EXE_XORI: begin
                 wreg_o <= `WriteEnable;
-                aluop_o <= `EXE_XOR_OP;
+                aluop_o <= `EXE_XORI_OP;
                 alusel_o <= `EXE_RES_LOGIC;
                 reg1_read_o <= `Enable;
                 reg2_read_o <= `Disable;
@@ -299,7 +302,7 @@ always @(rst, inst_i, reg1_data_i, reg2_data_i, pc_i) begin
             end
             `EXE_ADDI: begin
                 wreg_o <= `WriteEnable;
-                aluop_o <= `EXE_ADD_OP;
+                aluop_o <= `EXE_ADDI_OP;
                 alusel_o <= `EXE_RES_ARITHMETIC;
                 reg1_read_o <= `Enable;
                 reg2_read_o <= `Disable;
@@ -308,7 +311,7 @@ always @(rst, inst_i, reg1_data_i, reg2_data_i, pc_i) begin
             end
             `EXE_ADDIU: begin
                 wreg_o <= `WriteEnable;
-                aluop_o <= `EXE_ADDU_OP;
+                aluop_o <= `EXE_ADDIU_OP;
                 alusel_o <= `EXE_RES_ARITHMETIC;
                 reg1_read_o <= `Enable;
                 reg2_read_o <= `Disable;
@@ -317,7 +320,7 @@ always @(rst, inst_i, reg1_data_i, reg2_data_i, pc_i) begin
             end
             `EXE_SLTI: begin
                 wreg_o <= `WriteEnable;
-                aluop_o <= `EXE_SLT_OP;
+                aluop_o <= `EXE_SLTI_OP;
                 alusel_o <= `EXE_RES_ARITHMETIC;
                 reg1_read_o <= `Enable;
                 reg2_read_o <= `Disable;
@@ -326,11 +329,11 @@ always @(rst, inst_i, reg1_data_i, reg2_data_i, pc_i) begin
             end
             `EXE_SLTIU: begin
                 wreg_o <= `WriteEnable;
-                aluop_o <= `EXE_SLTU_OP;
+                aluop_o <= `EXE_SLTIU_OP;
                 alusel_o <= `EXE_RES_ARITHMETIC;
                 reg1_read_o <= `Enable;
                 reg2_read_o <= `Disable;
-                imm_o <= unsign_imm;
+                imm_o <= sign_imm;
                 wd_o <= rt_addr;
             end
             default: begin
@@ -339,7 +342,7 @@ always @(rst, inst_i, reg1_data_i, reg2_data_i, pc_i) begin
     end
 end
 
-always @(rst, ex_wd_i, ex_wreg_i, reg1_read_o, reg1_addr_o, mem_wd_i, mem_wreg_i) begin
+always @(rst or ex_wreg_i or ex_wd_i or reg1_read_o or reg1_addr_o or mem_wreg_i or mem_wd_i or ex_wdata_i or mem_wdata_i or reg1_data_i or imm_o) begin
     if (rst == `RstEnable) begin
         reg1_o <=  `ZeroWord;
     end else if ((ex_wreg_i == `Enable) && (ex_wd_i == reg1_addr_o) && (reg1_read_o == `Enable)) begin
@@ -356,7 +359,7 @@ always @(rst, ex_wd_i, ex_wreg_i, reg1_read_o, reg1_addr_o, mem_wd_i, mem_wreg_i
     end
 end
 
-always @(rst, ex_wd_i, ex_wreg_i, reg2_read_o, reg2_addr_o, mem_wd_i, mem_wreg_i) begin
+always @(rst or ex_wreg_i or ex_wd_i or reg2_read_o or reg2_addr_o or mem_wreg_i or mem_wd_i or ex_wdata_i or mem_wdata_i or reg2_data_i or imm_o) begin
     if (rst == `RstEnable) begin
         reg2_o <=  `ZeroWord;
     end else if ((ex_wreg_i == `Enable) && (ex_wd_i == reg2_addr_o) && (reg2_read_o == `Enable)) begin
@@ -365,7 +368,7 @@ always @(rst, ex_wd_i, ex_wreg_i, reg2_read_o, reg2_addr_o, mem_wd_i, mem_wreg_i
     )) begin
         reg2_o <= mem_wdata_i;
     end else if (reg2_read_o == `Enable) begin
-        reg2_o <= reg1_data_i;
+        reg2_o <= reg2_data_i;
     end else if (reg2_read_o == `Disable) begin
         reg2_o <= imm_o;
     end else begin

@@ -1,5 +1,5 @@
 /* This is the HILO register of STPU */
-`include "defines.v"
+`include "Defines.vh"
 module hilo_reg(
     input wire rst,
     input wire clk,
@@ -11,7 +11,7 @@ module hilo_reg(
 );
 
 always @(posedge clk) begin
-    if (rst == `ResetEnable) begin
+    if (rst == `RstEnable) begin
         hi_o <= `ZeroWord;
         lo_o <= `ZeroWord;
     end else if (we == `WriteEnable) begin
