@@ -8,3 +8,7 @@ Team: Liu Jiaqi, Ma Yiwen, Lin Jinhuang, Gu Yanhan.
 
 Advisor: Sutao.
 
+/////////////////////////////////////////////////////////////
+
+Now we are adding CP0, branch prediction, loading memory to our STPU.
+
