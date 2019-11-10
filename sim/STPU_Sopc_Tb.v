@@ -14,7 +14,7 @@ module stpu_sopc_tb();
     initial begin
         rst = `RstEnable;
         #195 rst = `RstDisable;
-        #1000 $stop;
+        #4100 $stop;
     end
     
     stpu_sopc stpu_sopc0(
@@ -23,4 +23,5 @@ module stpu_sopc_tb();
     );
     
 endmodule
+
 

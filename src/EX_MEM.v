@@ -14,6 +14,14 @@ module ex_mem (
     input   wire[`DoubleRegBus] hilo_i,
     input   wire[1:0]           cnt_i,
     
+    input   wire                ex_cp0_reg_we,
+    input   wire[`RegAddrBus]   ex_cp0_reg_write_addr,
+    input   wire[`RegBus]       ex_cp0_reg_data,
+
+    output   reg                mem_cp0_reg_we,
+    output   reg[`RegAddrBus]   mem_cp0_reg_write_addr,
+    output   reg[`RegBus]       mem_cp0_reg_data,
+
     output  reg[`DoubleRegBus]  hilo_o,
     output  reg[1:0]            cnt_o,
     output  reg                 mem_whilo,
@@ -35,6 +43,9 @@ module ex_mem (
     		mem_lo <= `ZeroWord;
     		hilo_o <= {`ZeroWord,`ZeroWord};
     		cnt_o <= 2'b00;
+            mem_cp0_reg_we <= `WriteDisable;
+            mem_cp0_reg_write_addr <= 5'b00000;
+            mem_cp0_reg_data <= `ZeroWord;
     	end else if(stall[3] == `Stop && stall[4] == `NoStop) begin
     	    mem_wdata <= `ZeroWord;
     		mem_wd <= `NOPRegAddr;
@@ -44,6 +55,9 @@ module ex_mem (
     		mem_lo <= `ZeroWord;
     		hilo_o <= hilo_i;
     		cnt_o <= cnt_i;
+            mem_cp0_reg_we <= `WriteDisable;
+            mem_cp0_reg_write_addr <= 5'b00000;
+            mem_cp0_reg_data <= `ZeroWord;
         end else if(stall[3] == `NoStop) begin
     		mem_wdata <= ex_wdata;
     		mem_wd <= ex_wd;
@@ -53,10 +67,17 @@ module ex_mem (
     		mem_lo <= ex_lo;
     		hilo_o <= {`ZeroWord,`ZeroWord};
     	    cnt_o <= 2'b00;
+            mem_cp0_reg_we <= ex_cp0_reg_we;
+            mem_cp0_reg_write_addr <= ex_cp0_reg_write_addr;
+            mem_cp0_reg_data <= ex_cp0_reg_data;
     	end else begin
-    	    hilo_o <= hilo_i;
+    	    /*hilo_o <= hilo_i;
     	    cnt_o <= cnt_i;
+    	    mem_cp0_reg_we <= `WriteDisable;
+            mem_cp0_reg_write_addr <= 5'b00000;
+            mem_cp0_reg_data <= `ZeroWord;*/
     	end
     	//other: remain ex_mem regs' value
     end
 endmodule
+

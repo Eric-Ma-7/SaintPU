@@ -61,3 +61,4 @@ reg[`RegBus] regs[0:`RegNum-1];
     end
 
 endmodule
+

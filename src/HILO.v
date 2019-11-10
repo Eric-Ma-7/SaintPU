@@ -10,13 +10,15 @@ module hilo_reg(
     output reg [`RegBus] lo_o
 );
 
-always @(posedge clk) begin
+always @(posedge clk ) begin
     if (rst == `RstEnable) begin
         hi_o <= `ZeroWord;
         lo_o <= `ZeroWord;
     end else if (we == `WriteEnable) begin
         hi_o <= hi_i;
         lo_o <= lo_i;
+    end else begin
     end
 end
 endmodule
+
