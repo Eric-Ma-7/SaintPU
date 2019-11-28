@@ -11,14 +11,10 @@ module stpu(
     output wire             rom_ce
     );
     //Variables connecting PC and CTRL
-    wire[5:0]           stall_pc;
-    wire[5:0]           stall_ifid;
-    wire[5:0]           stall_idex;
-    wire[5:0]           stall_exmem;
-    wire[5:0]           stall_memwb;
-    
-    
-    
+    //CTRL
+    wire[5:0]           stall;
+    wire[`RegBus]       new_pc;
+    wire                flush;
     
     //Variables connecting IF/ID and ID
     wire[`InstAddrBus]  pc;
@@ -33,7 +29,12 @@ module stpu(
     wire[`RegBus]       id_reg2_o;
     wire                id_wreg_o;
     wire[`RegAddrBus]   id_wd_o;    
+    wire                id_in_delayslot_o;
+    wire[`RegBus]       id_link_address_o;	
     wire                stallreq_id;
+    wire[`RegBus]   id_excepttype_o;
+    wire[`RegBus]   id_current_inst_addr_o;
+    wire            id_in_delayslot_i;
     
     //Variables Connecting ID/EX and EX
     wire[`RegBus]       ex_inst_i;
@@ -43,6 +44,13 @@ module stpu(
     wire[`RegBus]       ex_reg2_i;
     wire                ex_wreg_i;
     wire[`RegAddrBus]   ex_wd_i;
+    
+    wire[`RegBus]       ex_excepttype_i;
+    wire[`RegBus]       ex_current_inst_addr_i;
+    wire                ex_is_in_delayslot_i;  
+
+
+    
     //Variables Connecting EX and EX/MEM
     wire                ex_wreg_o;
     wire[`RegAddrBus]   ex_wd_o;
@@ -58,12 +66,23 @@ module stpu(
     wire                ex_cp0_reg_we_o;
     wire[`RegAddrBus]   ex_cp0_reg_write_addr_o;
     wire[`RegBus]       ex_cp0_reg_data_o;
+        
+    wire[`RegBus]       ex_excepttype_o;
+    wire[`RegBus]       ex_current_inst_addr_o;
+    wire                ex_is_in_delayslot_o;  
     
+    //direct read from cp0
     wire[`RegBus]       ex_cp0_reg_data_i;
     
-    wire                mem_cp0_reg_we_o;
-    wire[`RegAddrBus]   mem_cp0_reg_write_addr_o;
-    wire[`RegBus]       mem_cp0_reg_data_o;
+
+    
+
+    wire[`RegBus] ex_link_address_i;	
+    
+
+	wire id_next_delayslot_o;
+	wire id_branch_flag_o;
+	wire[`RegBus] id_branch_address;
     
     //Variables Connecting EX/MEM and MEM
     wire                mem_wreg_i;
@@ -72,6 +91,10 @@ module stpu(
     wire[`RegBus]       mem_hi_i;
     wire[`RegBus]       mem_lo_i;
     wire                mem_whilo_i;
+    
+    wire[`RegBus]       mem_excepttype_i;
+    wire[`RegBus]       mem_current_inst_address_i;
+    wire                mem_is_in_delayslot_i;
     
     wire                mem_cp0_reg_we_i;
     wire[`RegAddrBus]   mem_cp0_reg_write_addr_i;
@@ -84,6 +107,13 @@ module stpu(
     wire[`RegBus]       mem_hi_o;
     wire[`RegBus]       mem_lo_o;
     wire                mem_whilo_o;    
+    wire[`RegBus]       mem_excepttype_o;
+    wire[`RegBus]       mem_current_inst_address_o;
+    wire                mem_is_in_delayslot_o;
+    
+    wire                mem_cp0_reg_we_o;
+    wire[`RegAddrBus]   mem_cp0_reg_write_addr_o;
+    wire[`RegBus]       mem_cp0_reg_data_o;
     
     wire[`DoubleRegBus] mem_hilo_i;
     wire[1:0]           mem_cnt_i;
@@ -100,6 +130,8 @@ module stpu(
     wire                wb_cp0_reg_we_i;
     wire[`RegAddrBus]   wb_cp0_reg_write_addr_i;
     wire[`RegBus]       wb_cp0_reg_data_i;
+    
+    wire[`RegBus]       latest_epc;
     
     //Variables Connecting ID and Regfile
     wire                reg1_read;
@@ -122,14 +154,34 @@ module stpu(
     wire                div_ready;
     
     
+    //GLobal control signal
+
+    //CP0
+    wire[`RegBus]   cp0_count;
+    wire[`RegBus]   cp0_compare;
+    wire[`RegBus]   cp0_status;
+    wire[`RegBus]   cp0_cause;
+    wire[`RegBus]   cp0_epc;
+    wire[`RegBus]   cp0_config;
+    wire[`RegBus]   cp0_prid;
     
+    
+
+
+ 
     //pc reg 
     pc pc_reg0(
         .clk(clk),  
         .rst(rst),  
         .pc(pc),    
         .ce(rom_ce),
-        .stall(stall_pc)
+        
+        .branch_flag_i(id_branch_flag_o),
+		.branch_target_address_i(id_branch_address),
+        
+        .new_pc(new_pc),
+        .flush(flush),
+        .stall(stall)
     );
     
     assign rom_addr_o   =   pc;
@@ -143,9 +195,10 @@ module stpu(
         .id_pc(id_pc_i),
         .id_inst(id_inst_i),
         .if_inst_ex(if_inst_ex),
-        .stall(stall_ifid)
+        .stall(stall),
+        .flush(flush)
     );
-    
+
     //ID
     id id0(
         .pc_i(id_pc_i), 
@@ -167,6 +220,7 @@ module stpu(
 		.mem_wreg_i(mem_wreg_o),
 		.mem_wdata_i(mem_wdata_o),
 		.mem_wd_i(mem_wd_o),
+		.is_in_delayslot_i(id_in_delayslot_i),
         
         //ID/EX
         .aluop_o(id_aluop_o),       
@@ -176,6 +230,14 @@ module stpu(
         .wd_o(id_wd_o),             
         .wreg_o(id_wreg_o),
         
+        .next_inst_in_delayslot_o(id_next_delayslot_o),	
+		.branch_flag_o(id_branch_flag_o),
+		.branch_target_address_o(id_branch_address),       
+		.link_addr_o(id_link_address_o),
+		
+		.is_in_delayslot_o(id_in_delayslot_o),
+        .excepttype_o(id_excepttype_o),
+        .current_inst_addr_o(id_current_inst_addr_o),
         
         //stall
         .stallreq_from_id(stallreq_id)
@@ -196,6 +258,7 @@ module stpu(
         .rdata2(reg2_data)
     );
     
+
     //ID/EX
     id_ex id_ex0(
         .clk(clk),          
@@ -209,6 +272,12 @@ module stpu(
         .id_wreg(id_wreg_o),
         .id_inst(if_inst_ex),
         
+        .id_link_address(id_link_address_o),
+		.id_is_in_delayslot(id_in_delayslot_o),
+		.next_inst_in_delayslot_i(id_next_delayslot_o),		
+        .id_excepttype(id_excepttype_o),
+        .id_current_inst_addr(id_current_inst_addr_o),
+        
         //output
         //To EX
         .ex_aluop(ex_aluop_i),  
@@ -218,10 +287,18 @@ module stpu(
         .ex_wd(ex_wd_i),        
         .ex_wreg(ex_wreg_i),
         .ex_inst(ex_inst_i),
-        .stall(stall_idex)
+        .ex_excepttype(ex_excepttype_i),
+        .ex_current_inst_addr(ex_current_inst_addr_i),
+        
+        
+        .ex_link_address(ex_link_address_i),
+  	    .ex_is_in_delayslot(ex_is_in_delayslot_i),
+		.is_in_delayslot_o(id_in_delayslot_i),	
+        
+        .stall(stall),
+        .flush(flush)
     );
 
-    
     //EX
     ex ex0(
         .alusel_i(ex_alusel_i),
@@ -265,8 +342,13 @@ module stpu(
         .wb_cp0_reg_we(wb_cp0_reg_we_i),
         .wb_cp0_reg_write_addr(wb_cp0_reg_write_addr_i),
         .wb_cp0_reg_data(wb_cp0_reg_data_i),
-
-
+        
+        
+        .link_address_i(ex_link_address_i),
+		.is_in_delayslot_i(ex_is_in_delayslot_i),
+        .excepttype_i(ex_excepttype_i),
+        .current_inst_addr_i(ex_current_inst_addr_i),
+        
         //output
         //to EX/MEM
         .wdata_o(ex_wdata_o),   
@@ -290,8 +372,10 @@ module stpu(
         .cp0_reg_read_addr_o(wb_cp0_reg_read_addr_i),
         .cp0_reg_we_o(ex_cp0_reg_we_o),
         .cp0_reg_write_addr_o(ex_cp0_reg_write_addr_o),
-        .cp0_reg_data_o(ex_cp0_reg_data_o)
-
+        .cp0_reg_data_o(ex_cp0_reg_data_o),
+        .excepttype_o(ex_excepttype_o),
+        .current_inst_addr_o(ex_current_inst_addr_o),
+        .is_in_delayslot_o(ex_is_in_delayslot_o)
     );
     
     
@@ -316,7 +400,8 @@ module stpu(
         //From EX
         .rst(rst),              
         .clk(clk),
-        .stall(stall_exmem),
+        .stall(stall),
+        .flush(flush),
         
         .ex_wdata(ex_wdata_o),  
         .ex_wd(ex_wd_o),
@@ -333,6 +418,10 @@ module stpu(
         .ex_cp0_reg_write_addr(ex_cp0_reg_write_addr_o),
         .ex_cp0_reg_data(ex_cp0_reg_data_o),
 
+        .ex_is_in_delayslot(ex_is_in_delayslot_o),
+        .ex_excepttype(ex_excepttype_o),
+        .ex_current_inst_addr(ex_current_inst_addr_o),
+        
         //output
         //To MEM
         .mem_wdata(mem_wdata_i), 
@@ -348,9 +437,16 @@ module stpu(
 
         .mem_cp0_reg_we(mem_cp0_reg_we_i),
         .mem_cp0_reg_write_addr(mem_cp0_reg_write_addr_i),
-        .mem_cp0_reg_data(mem_cp0_reg_data_i)
+        .mem_cp0_reg_data(mem_cp0_reg_data_i),
+        
+        .mem_excepttype(mem_excepttype_i),
+        .mem_current_inst_addr(mem_current_inst_address_i),
+        .mem_is_in_delayslot(mem_is_in_delayslot_i)
     );
     
+    
+
+       
     //MEM
     mem mem0(
         .wdata_i(mem_wdata_i),  
@@ -364,6 +460,19 @@ module stpu(
         .cp0_reg_write_addr_i(mem_cp0_reg_write_addr_i),
         .cp0_reg_data_i(mem_cp0_reg_data_i),
         
+        .excepttype_i(mem_excepttype_i),
+        .current_inst_address_i(mem_current_inst_address_i),
+        .is_in_delayslot_i(mem_is_in_delayslot_i),
+        
+        .cp0_status_i(cp0_status),
+        .cp0_cause_i(cp0_cause),
+        .cp0_epc_i(cp0_epc),
+        
+        
+        .wb_cp0_reg_we(wb_cp0_reg_we_i),
+		.wb_cp0_reg_write_address(wb_cp0_reg_write_addr_i),
+	    .wb_cp0_reg_data(wb_cp0_reg_data_i),
+        
         //To MEM/WB
         .wdata_o(mem_wdata_o),  
         .wd_o(mem_wd_o),
@@ -375,18 +484,18 @@ module stpu(
 
         .cp0_reg_we_o(mem_cp0_reg_we_o),
         .cp0_reg_write_addr_o(mem_cp0_reg_write_addr_o),
-        .cp0_reg_data_o(mem_cp0_reg_data_o)
-
-        
+        .cp0_reg_data_o(mem_cp0_reg_data_o),
+        .cp0_epc_o(latest_epc),
+        .excepttype_o(mem_excepttype_o),
+        .current_inst_address_o(mem_current_inst_address_o),
+        .is_in_delayslot_o(mem_is_in_delayslot_o)
     );
-    
 
-    
-    
     mem_wb mem_wb0(
         .rst(rst),              
         .clk(clk),
-        .stall(stall_memwb),
+        .stall(stall),
+        .flush(flush),
         
         //From MEM
         .mem_wdata(mem_wdata_o),
@@ -430,19 +539,23 @@ module stpu(
         .lo_o(lo)
    );
    
+
    ctrl ctrl0(
         //input
         .stallreq_from_ex(stallreq_ex),
         .stallreq_from_id(stallreq_id),
         .rst(rst),
+        .excepttype_i(mem_excepttype_o),
+        .cp0_epc_i(latest_epc),
+        
+        .flush(flush),
         
         //output
-        .stall_pc(stall_pc),
-        .stall_ifid(stall_ifid),
-        .stall_idex(stall_idex),
-        .stall_exmem(stall_exmem),
-        .stall_memwb(stall_memwb)
+        .stall_o(stall),
+        .new_pc(new_pc)
     );  
+    
+
 
    cp0 cp0_0(
         //input
@@ -453,13 +566,23 @@ module stpu(
         .we_i(wb_cp0_reg_we_i),
         .waddr_i(wb_cp0_reg_write_addr_i),
         .wdata_i(wb_cp0_reg_data_i),
-
+        .excepttype_i(mem_excepttype_o),
+        .current_inst_addr_i(mem_current_inst_address_o),
+        .is_in_delayslot_i(mem_is_in_delayslot_o),
+        
+        
         //output
         .data_o(ex_cp0_reg_data_i),
-        .timer_int_o(timer_int_o)
+        .timer_int_o(timer_int_o),
+        .count_o(cp0_count),
+        .compare_o(cp0_compare),
+        .status_o(cp0_status),
+        .cause_o(cp0_cause),
+        .epc_o(cp0_epc),
+        .config_o(cp0_config),
+        .prid_o(cp0_prid)
     );
 
 
 endmodule
-
 

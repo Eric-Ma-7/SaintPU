@@ -25,6 +25,17 @@
 `define ChipEnable 1'b1
 `define ChipDisable 1'b0
 
+`define InstOpBus 5:0
+`define InstFuncBus 5:0
+`define InstShamtBus 4:0
+`define ImmBus 15:0
+`define Enable 1'b1
+`define Disable 1'b0
+
+`define IndelaySolt     1'b1
+`define NotInDelaySolt  1'b0
+
+
 
 `define EXE_AND  6'b100100
 `define EXE_OR   6'b100101
@@ -85,6 +96,38 @@
 `define EXE_BLTZ  5'b00000
 `define EXE_BLTZAL  5'b10000
 `define EXE_BNE  6'b000101
+
+`define EXE_LB  6'b100000
+`define EXE_LBU  6'b100100
+`define EXE_LH  6'b100001
+`define EXE_LHU  6'b100101
+`define EXE_LL  6'b110000
+`define EXE_LW  6'b100011
+`define EXE_LWL  6'b100010
+`define EXE_LWR  6'b100110
+`define EXE_SB  6'b101000
+`define EXE_SC  6'b111000
+`define EXE_SH  6'b101001
+`define EXE_SW  6'b101011
+`define EXE_SWL  6'b101010
+`define EXE_SWR  6'b101110
+
+`define EXE_SYSCALL 6'b001100
+   
+`define EXE_TEQ 6'b110100
+`define EXE_TEQI 5'b01100
+`define EXE_TGE 6'b110000
+`define EXE_TGEI 5'b01000
+`define EXE_TGEIU 5'b01001
+`define EXE_TGEU 6'b110001
+`define EXE_TLT 6'b110010
+`define EXE_TLTI 5'b01010
+`define EXE_TLTIU 5'b01011
+`define EXE_TLTU 6'b110011
+`define EXE_TNE 6'b110110
+`define EXE_TNEI 5'b01110
+   
+`define EXE_ERET 32'b01000010000000000000000000011000
 
 `define EXE_NOP 6'b000000
 `define SSNOP 32'b00000000000000000000000001000000
@@ -154,6 +197,43 @@
 `define EXE_BLTZAL_OP  8'b01001010
 `define EXE_BNE_OP  8'b01010010
 
+`define EXE_LB_OP  8'b11100000
+`define EXE_LBU_OP  8'b11100100
+`define EXE_LH_OP  8'b11100001
+`define EXE_LHU_OP  8'b11100101
+`define EXE_LL_OP  8'b11110000
+`define EXE_LW_OP  8'b11100011
+`define EXE_LWL_OP  8'b11100010
+`define EXE_LWR_OP  8'b11100110
+`define EXE_PREF_OP  8'b11110011
+`define EXE_SB_OP  8'b11101000
+`define EXE_SC_OP  8'b11111000
+`define EXE_SH_OP  8'b11101001
+`define EXE_SW_OP  8'b11101011
+`define EXE_SWL_OP  8'b11101010
+`define EXE_SWR_OP  8'b11101110
+`define EXE_SYNC_OP  8'b00001111
+
+`define EXE_MFC0_OP 8'b01011101
+`define EXE_MTC0_OP 8'b01100000
+
+`define EXE_SYSCALL_OP 8'b00001100
+
+`define EXE_TEQ_OP 8'b00110100
+`define EXE_TEQI_OP 8'b01001000
+`define EXE_TGE_OP 8'b00110000
+`define EXE_TGEI_OP 8'b01000100
+`define EXE_TGEIU_OP 8'b01000101
+`define EXE_TGEU_OP 8'b00110001
+`define EXE_TLT_OP 8'b00110010
+`define EXE_TLTI_OP 8'b01000110
+`define EXE_TLTIU_OP 8'b01000111
+`define EXE_TLTU_OP 8'b00110011
+`define EXE_TNE_OP 8'b00110110
+`define EXE_TNEI_OP 8'b01001001
+   
+`define EXE_ERET_OP 8'b01101011
+
 `define EXE_NOP_OP    8'b00000000
 
 `define EXE_RES_LOGIC 3'b001
@@ -161,6 +241,8 @@
 `define EXE_RES_MOVE 3'b011	
 `define EXE_RES_ARITHMETIC 3'b100	
 `define EXE_RES_MUL 3'b101
+`define EXE_RES_JUMP_BRANCH 3'b110
+`define EXE_RES_LOAD_STORE 3'b111	
 
 `define EXE_RES_NOP 3'b000
 
@@ -178,6 +260,15 @@
 `define RegNumLog2 5
 `define NOPRegAddr 5'b00000
 
+//ram
+`define DataAddrBus 31:0
+`define DataBus 31:0
+`define DataMemNum 131071
+`define DataMemNumLog2 17
+`define ByteWidth 7:0
+
+
+//div module
 `define DivFree 2'b00
 `define DivByZero 2'b01
 `define DivOn 2'b10
@@ -187,3 +278,10 @@
 `define DivStart 1'b1
 `define DivStop 1'b0
 
+`define CP0_REG_COUNT    5'b01001        
+`define CP0_REG_COMPARE    5'b01011      
+`define CP0_REG_STATUS    5'b01100       
+`define CP0_REG_CAUSE    5'b01101       
+`define CP0_REG_EPC    5'b01110          
+`define CP0_REG_PrId    5'b01111         
+`define CP0_REG_CONFIG    5'b10000       

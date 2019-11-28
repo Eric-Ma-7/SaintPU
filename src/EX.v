@@ -2,61 +2,71 @@
 
 module ex(
 
-    input wire[`AluSelBus] alusel_i,
-    input wire[`AluOpBus] aluop_i,
-    input wire[`RegBus] reg1_i,
-    input wire[`RegBus] reg2_i,
+    input wire[`AluSelBus]  alusel_i,
+    input wire[`AluOpBus]   aluop_i,
+    input wire[`RegBus]     reg1_i,
+    input wire[`RegBus]     reg2_i,
     input wire[`RegAddrBus] wd_i,
-    input wire[`InstBus] ex_inst_i,
+    input wire[`InstBus]    ex_inst_i,
 
-    input wire wreg_i,
-    input wire[`RegBus] hi_i,
-    input wire[`RegBus] lo_i,
+    input wire              wreg_i,
+    input wire[`RegBus]     hi_i,
+    input wire[`RegBus]     lo_i,
  
     input wire[`DoubleRegBus] hilo_temp_i,
-    input wire[1:0] cnt_i,
+    input wire[1:0]         cnt_i,
    
-    input wire mem_whilo_i,
-    input wire[`RegBus] mem_hi_i,
-    input wire[`RegBus] mem_lo_i,
+    input wire              mem_whilo_i,
+    input wire[`RegBus]     mem_hi_i,
+    input wire[`RegBus]     mem_lo_i,
     
-    input wire wb_whilo_i,
-    input wire[`RegBus] wb_hi_i,
-    input wire[`RegBus] wb_lo_i,
+    input wire              wb_whilo_i,
+    input wire[`RegBus]     wb_hi_i,
+    input wire[`RegBus]     wb_lo_i,
     
     input wire[`DoubleRegBus] div_result_i,
-    input wire div_ready_i,
+    input wire              div_ready_i,
     
-    input wire[`RegBus] cp0_reg_data_i,
-    input wire mem_cp0_reg_we,
+    input wire[`RegBus]     cp0_reg_data_i,
+    input wire              mem_cp0_reg_we,
     input wire[`RegAddrBus] mem_cp0_reg_write_addr,
-    input wire[`RegBus] mem_cp0_reg_data,
+    input wire[`RegBus]     mem_cp0_reg_data,
 
-    input wire wb_cp0_reg_we,
+    input wire              wb_cp0_reg_we,
     input wire[`RegAddrBus] wb_cp0_reg_write_addr,
-    input wire[`RegBus] wb_cp0_reg_data,
-
-
-    output reg[`RegBus] div_opdata1_o,
-    output reg[`RegBus] div_opdata2_o,
-    output reg div_start_o,
-    output reg signed_div_o,
+    input wire[`RegBus]     wb_cp0_reg_data,
+	
+	input wire[`RegBus]    link_address_i,
+	input wire             is_in_delayslot_i,
+    
+    input wire [`RegBus]    excepttype_i,
+    input wire [`RegBus]    current_inst_addr_i,
+    
+    output wire [`RegBus]   excepttype_o,
+    output wire [`RegBus]   current_inst_addr_o,
+    output wire             is_in_delayslot_o,
+    
+    
+    output reg[`RegBus]     div_opdata1_o,
+    output reg[`RegBus]     div_opdata2_o,
+    output reg              div_start_o,
+    output reg              signed_div_o,
   
     output reg[`DoubleRegBus] hilo_temp_o,  
-    output reg[1:0] cnt_o,
-    output reg stallreq,
+    output reg[1:0]         cnt_o,
+    output reg              stallreq,
      
-    output reg whilo_o,
-    output reg[`RegBus] hi_o,
-    output reg[`RegBus] lo_o,
-    output reg[`RegBus] wdata_o,
+    output reg              whilo_o,
+    output reg[`RegBus]     hi_o,
+    output reg[`RegBus]     lo_o,
+    output reg[`RegBus]     wdata_o,
     output reg[`RegAddrBus] wd_o,
-    output reg wreg_o,
+    output reg              wreg_o,
 
     output reg[`RegAddrBus] cp0_reg_read_addr_o,
-    output reg cp0_reg_we_o,
+    output reg              cp0_reg_we_o,
     output reg[`RegAddrBus] cp0_reg_write_addr_o,
-    output reg[`RegBus] cp0_reg_data_o
+    output reg[`RegBus]     cp0_reg_data_o
     );
 
     reg[`RegBus] logicout;
@@ -84,6 +94,19 @@ module ex(
     reg stallreq_madd_msub;
     reg stallreq_div;
     
+    reg trap_assert;
+    reg ov_assert;
+    
+    
+    //bit 10: trap
+    //bit 11: overflow exception 
+    assign excepttype_o = {excepttype_i[31:12], ov_assert, trap_assert,
+    excepttype_i[9:8], 8'h00};
+    
+    assign is_in_delayslot_o = is_in_delayslot_i;
+    
+    assign current_inst_addr_o = current_inst_addr_i;
+    
     //Add&Sub&Mul temp value
     assign add_res_temp = reg1_i + reg2_i;
     assign sub_res_temp = reg1_i - reg2_i;
@@ -95,6 +118,63 @@ module ex(
     
     assign ov_flag_sub = (((reg1_i[31] && (~reg2_i[31]) && (~sub_res_temp[31]))||
     ((~reg1_i[31]) && (reg2_i[31]) && (sub_res_temp[31])))) ? 1'b1 : 1'b0; 
+    
+    //whether trap
+    always @(*)
+        begin
+            trap_assert = `TrapNotAssert;
+            case(aluop_i)
+                `EXE_TEQ_OP, `EXE_TEQI_OP: begin
+                    if( reg1_i == reg2_i) begin
+                    trap_assert = `TrapAssert;
+                    end
+                end
+                 `EXE_TGE_OP,`EXE_TGEI_OP:
+                    //compare rs and rt's value
+                    begin if((reg1_i[31] == 1'b0) && (reg2_i[31] == 1'b1)) begin
+                            trap_assert = `TrapAssert;
+                        end else if((reg1_i[31] == 1'b1) && (reg2_i[31] == 1'b0)) begin
+                            trap_assert = `TrapNotAssert;
+                        end else begin
+                            trap_assert = ~sub_res_temp[31];
+                        end
+                    end
+                 `EXE_TGEIU_OP, `EXE_TGEU_OP:
+                    begin if (reg1_i >= reg2_i) begin
+                        trap_assert = `TrapAssert;
+                    end  else begin
+                        trap_assert = `TrapNotAssert;
+                    end
+                 end
+                 `EXE_TLT_OP, `EXE_TLTI_OP: begin
+                     if((reg1_i[31] == 1'b0) && (reg2_i[31] == 1'b1)) begin
+                            trap_assert = `TrapNotAssert;
+                        end else if((reg1_i[31] == 1'b1) && (reg2_i[31] == 1'b0)) begin
+                            trap_assert = `TrapAssert;
+                        end else begin
+                            trap_assert = sub_res_temp[31];
+                        end
+                    end
+                 `EXE_TLTU_OP, `EXE_TLTIU_OP:
+                    begin if (reg1_i < reg2_i) 
+                        trap_assert = `TrapAssert;
+                     else 
+                        trap_assert = `TrapNotAssert;
+                    
+                 end
+                 `EXE_TNE_OP, `EXE_TNEI_OP:
+                    begin if (reg1_i != reg2_i) 
+                        trap_assert = `TrapAssert;
+                    else 
+                        trap_assert = `TrapNotAssert;
+                 end
+                default: begin
+                    trap_assert = `TrapNotAssert;
+                end    
+                endcase                      
+        end
+    
+    
     
     // logic 
     always @(reg1_i or reg2_i or aluop_i)
@@ -437,7 +517,7 @@ module ex(
                         end else if((reg1_i[31] == 1'b1) && (reg2_i[31] == 1'b0)) begin
                             arithout = 1'b1;
                         end else begin
-                            arithout = reg1_i[31] ^ ov_flag_sub;
+                            arithout = sub_res_temp[31];
                         end
                     end
                 `EXE_SLTI_OP:
@@ -447,7 +527,7 @@ module ex(
                         end else if((reg1_i[31] == 1'b1) && (reg2_i[31] == 1'b0)) begin
                             arithout = 1'b1;
                         end else begin
-                            arithout = reg1_i[31] ^ ov_flag_sub;
+                            arithout = sub_res_temp[31];
                         end
                     end
                 `EXE_SLTU_OP:
@@ -524,8 +604,10 @@ module ex(
         wd_o = wd_i;
 	if(((aluop_i == `EXE_ADD_OP) || (aluop_i == `EXE_ADDI_OP) || (aluop_i == `EXE_SUB_OP)) && (ov_flag == 1'b1)) begin
         wreg_o = `WriteDisable;
+        ov_assert = 1'b1;
 	end else begin 
 	    wreg_o = wreg_i;
+	    ov_assert = 1'b0;
 	end
         case (alusel_i)
             `EXE_RES_LOGIC:
@@ -548,6 +630,10 @@ module ex(
 		        begin
 		            wdata_o = mul_res[31:0];////
 		        end
+			`EXE_RES_JUMP_BRANCH: 
+				begin
+					wdata_o = link_address_i;
+				end
             default: 
                 begin
                     wdata_o = `ZeroWord;
@@ -568,4 +654,3 @@ module ex(
         end
     end
 endmodule
-

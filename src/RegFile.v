@@ -34,31 +34,30 @@ reg[`RegBus] regs[0:`RegNum-1];
 /******************************* Reading Operation of Reading Port1 **************************************************/
     always @ (*) begin
         if(rst == `RstEnable) begin
-            rdata1 <= `ZeroWord;
+            rdata1 = `ZeroWord;
         end else if(raddr1 == `RegNumLog2'h0) begin
-        rdata1 <= `ZeroWord;
+        rdata1 = `ZeroWord;
         end else if((raddr1 == waddr) && (we == `WriteEnable) && (re1 == `ReadEnable)) 
-            begin  rdata1 <= wdata;
+            begin  rdata1 = wdata;
         end else if(re1 == `ReadEnable) begin
-            rdata1 <= regs[raddr1];
+            rdata1 = regs[raddr1];
         end else begin
-            rdata1 <= `ZeroWord;
+            rdata1 = `ZeroWord;
         end
     end
 /******************************* Reading Operation of Reading Port2 **************************************************/
     always @ (*) begin
         if(rst == `RstEnable) begin
-            rdata2 <= `ZeroWord;
+            rdata2 = `ZeroWord;
         end else if(raddr2 == `RegNumLog2'h0) begin
-        rdata2 <= `ZeroWord;
+        rdata2 = `ZeroWord;
         end else if((raddr2 == waddr) && (we == `WriteEnable) && (re2 == `ReadEnable)) 
-            begin  rdata2 <= wdata;
+            begin  rdata2 = wdata;
         end else if(re2 == `ReadEnable) begin
-            rdata2 <= regs[raddr2];
+            rdata2 = regs[raddr2];
         end else begin
-            rdata2 <= `ZeroWord;
+            rdata2 = `ZeroWord;
         end
     end
 
 endmodule
-
