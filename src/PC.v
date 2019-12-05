@@ -14,12 +14,12 @@ module  pc(
 	output  reg					ce   
 );
     reg[`InstAddrBus]   pc_temp;
-	always @(posedge clk) begin
+	always @(*) begin
 		if (rst) begin
-			ce <= `ChipDisable;
+			ce = `ChipDisable;
 		end
 		else begin
-			ce <= `ChipEnable;
+			ce = `ChipEnable;
 		end
 	end
 	always @(posedge clk) begin

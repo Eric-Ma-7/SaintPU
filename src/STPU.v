@@ -20,7 +20,6 @@ module stpu(
     wire[`InstAddrBus]  pc;
     wire[`InstAddrBus]  id_pc_i;
     wire[`InstBus]      id_inst_i;
-    wire[`InstBus]      if_inst_ex;
 
     //Variables Connecting ID and ID/EX
     wire[`AluOpBus]     id_aluop_o;
@@ -166,9 +165,10 @@ module stpu(
     wire[`RegBus]   cp0_prid;
     
     
-
-
- 
+    wire[`RegBus] id_inst_o;
+    assign id_inst_i = rom_data_i;
+    assign rom_addr_o   =   pc;
+    
     //pc reg 
     pc pc_reg0(
         .clk(clk),  
@@ -184,21 +184,20 @@ module stpu(
         .stall(stall)
     );
     
-    assign rom_addr_o   =   pc;
+    
     
     //IF/ID
     if_id if_id0(
         .clk(clk),  
         .rst(rst),  
         .if_pc(pc),
-        .if_inst(rom_data_i),   
+          
         .id_pc(id_pc_i),
-        .id_inst(id_inst_i),
-        .if_inst_ex(if_inst_ex),
+        
         .stall(stall),
         .flush(flush)
     );
-
+    
     //ID
     id id0(
         .pc_i(id_pc_i), 
@@ -229,6 +228,7 @@ module stpu(
         .reg2_o(id_reg2_o),
         .wd_o(id_wd_o),             
         .wreg_o(id_wreg_o),
+        .id_inst_o(id_inst_o),
         
         .next_inst_in_delayslot_o(id_next_delayslot_o),	
 		.branch_flag_o(id_branch_flag_o),
@@ -270,7 +270,10 @@ module stpu(
         .id_reg2(id_reg2_o),
         .id_wd(id_wd_o),        
         .id_wreg(id_wreg_o),
-        .id_inst(if_inst_ex),
+        
+        //.id_inst(if_inst_ex),
+        .id_inst(id_inst_o),
+        
         
         .id_link_address(id_link_address_o),
 		.id_is_in_delayslot(id_in_delayslot_o),

@@ -42,6 +42,7 @@ output reg              reg1_read_o,
 output reg              reg2_read_o,
 /* Stall Request From ID stage. */
 output wire             stallreq_from_id,
+output wire[`RegBus]    id_inst_o,
 
 output reg              next_inst_in_delayslot_o,
 output reg              branch_flag_o,
@@ -83,7 +84,7 @@ assign rt_addr = inst_i[20:16];
 assign rd_addr = inst_i[15:11];
 assign sign_imm = {{16{imm[15]}},imm};
 assign unsign_imm = {16'h0,imm};
-
+assign id_inst_o = inst_i;
 
 assign stallreq_from_id = `NoStop;
 
@@ -91,8 +92,7 @@ assign excepttype_o = {19'b0, excepttype_is_eret, 2'b0, instvalid, excepttype_is
 
 assign current_inst_addr_o = pc_i;
 
-always @(rd_addr or rs_addr or rt_addr or inst_op or inst_func or inst_sa 
-or unsign_imm or imm or sign_imm or inst_i[31:21] or inst_i[10:0] or inst_i[20:16] or pc_plus_8 or reg1_o) 
+always @(*) 
     begin
         aluop_o = `EXE_NOP_OP;
         alusel_o = `EXE_RES_NOP;
