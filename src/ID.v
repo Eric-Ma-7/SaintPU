@@ -198,48 +198,72 @@ always @(*)
                         imm_o = {{16{inst_i[15]}},inst_i[15:0]};
                         instvalid = `InstValid;
                     end
+                    `EXE_BGEZ: begin
+						wreg_o = `WriteDisable;
+						aluop_o = `EXE_BGEZ_OP;
+						alusel_o = `EXE_RES_JUMP_BRANCH;
+						reg1_read_o = `Enable;
+						reg2_read_o = `Disable;
+						instvalid = `InstValid;
+						if(reg1_o[31] == 1'b0) begin
+							branch_target_address_o =
+							pc_plus_4 + imm_sll2_signedext;
+							branch_flag_o = `Branch;
+							next_inst_in_delayslot_o = `InDelaySlot;
+						end
+					end
+					`EXE_BGEZAL: begin
+						wreg_o = `WriteEnable;
+						aluop_o = `EXE_BGEZAL_OP;
+						alusel_o = `EXE_RES_JUMP_BRANCH;
+						reg1_read_o = `Enable;
+						reg2_read_o = `Disable;
+						link_addr_o = pc_plus_8;
+						wd_o = 5'b11111;
+						instvalid = `InstValid;
+						if(reg1_o[31] == 1'b0) begin
+							branch_target_address_o =
+							pc_plus_4 + imm_sll2_signedext;
+							branch_flag_o = `Branch;
+							next_inst_in_delayslot_o = `InDelaySlot;
+						end
+					end
+					`EXE_BLTZ: begin
+						wreg_o = `WriteDisable;
+						aluop_o = `EXE_BGEZAL_OP;
+						alusel_o = `EXE_RES_JUMP_BRANCH;
+						reg1_read_o = `Enable;
+						reg2_read_o = `Disable;
+						instvalid = `InstValid;
+						if(reg1_o[31] == 1'b1) begin
+							branch_target_address_o =
+							pc_plus_4 + imm_sll2_signedext;
+							branch_flag_o = `Branch;
+							next_inst_in_delayslot_o = `InDelaySlot;
+						end
+					end
+					`EXE_BLTZAL: begin
+						wreg_o = `WriteEnable;
+						aluop_o = `EXE_BGEZAL_OP;
+						alusel_o = `EXE_RES_JUMP_BRANCH;
+						reg1_read_o = `Enable;
+						reg2_read_o = `Disable;
+						link_addr_o = pc_plus_8;
+						wd_o = 5'b11111;
+						instvalid = `InstValid;
+						if(reg1_o[31] == 1'b1) begin
+							branch_target_address_o =
+							pc_plus_4 + imm_sll2_signedext;
+							branch_flag_o = `Branch;
+							next_inst_in_delayslot_o = `InDelaySlot;
+						end
+					end
                     default: begin
                     end
-                endcase
+                endcase 
              end
             `EXE_SPECIAL_INST:  begin
-             if (rs_addr == 5'h0) begin 
-                    case (inst_func)
-                        `EXE_SLL: begin
-                            wreg_o = `WriteEnable;
-                            aluop_o = `EXE_SLL_OP;
-                            alusel_o = `EXE_RES_SHIFT;
-                            reg1_read_o = `Disable;
-                            reg2_read_o = `Enable;
-                            imm_o = {27'h0,inst_sa};
-                            wd_o = rd_addr;
-                            instvalid = `InstValid;
-                        end
-                        `EXE_SRL: begin
-                            wreg_o = `WriteEnable;
-                            aluop_o = `EXE_SRL_OP;
-                            alusel_o = `EXE_RES_SHIFT;
-                            reg1_read_o = `Disable;
-                            reg2_read_o = `Enable;
-                            imm_o = {27'h0,inst_sa};
-                            wd_o = rd_addr;
-                            instvalid = `InstValid;
-                        end
-                        `EXE_SRA: begin
-                            wreg_o = `WriteEnable;
-                            aluop_o = `EXE_SRA_OP;
-                            alusel_o = `EXE_RES_SHIFT;
-                            reg1_read_o = `Disable;
-                            reg2_read_o = `Enable;
-                            imm_o = {27'h0,inst_sa};
-                            wd_o = rd_addr;
-                            instvalid = `InstValid;
-                        end
-
-                        default: begin
-                        end
-                    endcase
-                end else begin
+             //if (rs_addr == 5'h0) begin 
                 case (inst_func)
                     `EXE_TEQ: begin
                         wreg_o = `WriteDisable;
@@ -307,6 +331,36 @@ always @(*)
                         reg2_read_o = `Enable;
                         instvalid = `InstValid;
                     end
+                    `EXE_SLL: begin
+                            wreg_o = `WriteEnable;
+                            aluop_o = `EXE_SLL_OP;
+                            alusel_o = `EXE_RES_SHIFT;
+                            reg1_read_o = `Disable;
+                            reg2_read_o = `Enable;
+                            imm_o = {27'h0,inst_sa};
+                            wd_o = rd_addr;
+                            instvalid = `InstValid;
+                        end
+                    `EXE_SRL: begin
+                            wreg_o = `WriteEnable;
+                            aluop_o = `EXE_SRL_OP;
+                            alusel_o = `EXE_RES_SHIFT;
+                            reg1_read_o = `Disable;
+                            reg2_read_o = `Enable;
+                            imm_o = {27'h0,inst_sa};
+                            wd_o = rd_addr;
+                            instvalid = `InstValid;
+                        end
+                    `EXE_SRA: begin
+                            wreg_o = `WriteEnable;
+                            aluop_o = `EXE_SRA_OP;
+                            alusel_o = `EXE_RES_SHIFT;
+                            reg1_read_o = `Disable;
+                            reg2_read_o = `Enable;
+                            imm_o = {27'h0,inst_sa};
+                            wd_o = rd_addr;
+                            instvalid = `InstValid;
+                        end
                     `EXE_AND: begin
                         wreg_o = `WriteEnable;
                         aluop_o = `EXE_AND_OP;
@@ -395,7 +449,6 @@ always @(*)
                         reg2_read_o = `Enable;
                         instvalid = `InstValid;
                     end
-                    
                     `EXE_SLTU: begin
                         wreg_o = `WriteEnable;
                         aluop_o = `EXE_SLTU_OP;
@@ -524,7 +577,7 @@ always @(*)
                     default: begin
                     end
                 endcase
-                end
+                
             end
             `EXE_ORI: begin
                 wreg_o = `WriteEnable;
@@ -685,72 +738,6 @@ always @(*)
 				end
 				instvalid = `InstValid;
 			end	
-			`EXE_REGIMM_INST: begin
-				case (inst_op)
-					`EXE_BGEZ: begin
-						wreg_o = `WriteDisable;
-						aluop_o = `EXE_BGEZ_OP;
-						alusel_o = `EXE_RES_JUMP_BRANCH;
-						reg1_read_o = `Enable;
-						reg2_read_o = `Disable;
-						instvalid = `InstValid;
-						if(reg1_o[31] == 1'b0) begin
-							branch_target_address_o =
-							pc_plus_4 + imm_sll2_signedext;
-							branch_flag_o = `Branch;
-							next_inst_in_delayslot_o = `InDelaySlot;
-						end
-					end
-					`EXE_BGEZAL: begin
-						wreg_o = `WriteEnable;
-						aluop_o = `EXE_BGEZAL_OP;
-						alusel_o = `EXE_RES_JUMP_BRANCH;
-						reg1_read_o = `Enable;
-						reg2_read_o = `Disable;
-						link_addr_o = pc_plus_8;
-						wd_o = 5'b11111;
-						instvalid = `InstValid;
-						if(reg1_o[31] == 1'b0) begin
-							branch_target_address_o =
-							pc_plus_4 + imm_sll2_signedext;
-							branch_flag_o = `Branch;
-							next_inst_in_delayslot_o = `InDelaySlot;
-						end
-					end
-					`EXE_BLTZ: begin
-						wreg_o = `WriteDisable;
-						aluop_o = `EXE_BGEZAL_OP;
-						alusel_o = `EXE_RES_JUMP_BRANCH;
-						reg1_read_o = `Enable;
-						reg2_read_o = `Disable;
-						instvalid = `InstValid;
-						if(reg1_o[31] == 1'b1) begin
-							branch_target_address_o =
-							pc_plus_4 + imm_sll2_signedext;
-							branch_flag_o = `Branch;
-							next_inst_in_delayslot_o = `InDelaySlot;
-						end
-					end
-					`EXE_BLTZAL: begin
-						wreg_o = `WriteEnable;
-						aluop_o = `EXE_BGEZAL_OP;
-						alusel_o = `EXE_RES_JUMP_BRANCH;
-						reg1_read_o = `Enable;
-						reg2_read_o = `Disable;
-						link_addr_o = pc_plus_8;
-						wd_o = 5'b11111;
-						instvalid = `InstValid;
-						if(reg1_o[31] == 1'b1) begin
-							branch_target_address_o =
-							pc_plus_4 + imm_sll2_signedext;
-							branch_flag_o = `Branch;
-							next_inst_in_delayslot_o = `InDelaySlot;
-						end
-					end
-					default: begin
-            end
-				endcase
-			end
 			default: begin
 			end
 		endcase

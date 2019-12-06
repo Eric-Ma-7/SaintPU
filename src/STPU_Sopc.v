@@ -38,8 +38,9 @@ module stpu_sopc(
         .clk(clk),              .rst(rst),
         .rom_addr_o(inst_addr), .rom_data_i(inst),
         .rom_ce(rom_ce),        .int_i(int),
-        .timer_int_o(timer_int)
+        .timer_int_o(timer_int) 
     );
+   
    
     inst_rom rom (
     .clka(clk),

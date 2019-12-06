@@ -46,7 +46,7 @@ always @(rst or stallreq_from_id or stallreq_from_ex or excepttype_i or cp0_epc_
     		end
     		endcase
     end else if (stallreq_from_ex == `Stop) begin
-        stall_o = 6'b001111;
+        stall_o = 6'b001111;    //EXMEM IDEX IFID PC   -> STALL
         flush = 1'b0;
     end else if (stallreq_from_id == `Stop) begin
         stall_o = 6'b000111;
